@@ -1,150 +1,33 @@
 {
   "channels": [
     {
-      "name": "NEXFlick",
+      "name": "VELOCIDADE PRO",
       "urls": [
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY"
+        "https://www.youtube.com/watch?v=ciSNHrKrkeQ",
+        "https://www.youtube.com/watch?v=bcZGP3MsrL0",
+        "https://www.youtube.com/watch?v=Cpl373FOntY",
+        "https://www.youtube.com/watch?v=Ldp9qioQHsg",
+        "https://www.youtube.com/watch?v=Mu0gKZis4cg"
       ]
     },
     {
-      "name": "CineNex",
+      "name": "AÇÃO & ESPORTE",
       "urls": [
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=sYM9RIp-IPA",
-        "https://www.youtube.com/watch?v=EYlOzOw7q2E",
-        "https://www.youtube.com/watch?v=2eccmLeiNm0",
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk"
+        "https://www.youtube.com/watch?v=aBTtLCz0Qk0",
+        "https://www.youtube.com/watch?v=0nL3qjE5Gs",
+        "https://www.youtube.com/watch?v=XTqHhCzcQhw",
+        "https://www.youtube.com/watch?v=Cpl373FOntY"
       ]
     },
     {
-      "name": "MoviNex",
+      "name": "MÚSICA TV",
       "urls": [
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=EYlOzOw7q2E",
-        "https://www.youtube.com/watch?v=zCbnNR9FWHg",
-        "https://www.youtube.com/watch?v=-jK_k4lGcgU",
-        "https://www.youtube.com/watch?v=sYM9RIp-IPA",
-        "https://www.youtube.com/watch?v=2eccmLeiNm0"
-      ]
-    },
-    {
-      "name": "FilmoraX",
-      "urls": [
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY"
-      ]
-    },
-    {
-      "name": "NexCine",
-      "urls": [
-        "https://www.youtube.com/watch?v=sYM9RIp-IPA",
-        "https://www.youtube.com/watch?v=EYlOzOw7q2E",
-        "https://www.youtube.com/watch?v=-jK_k4lGcgU",
-        "https://www.youtube.com/watch?v=zCbnNR9FWHg",
-        "https://www.youtube.com/watch?v=2eccmLeiNm0"
-      ]
-    },
-    {
-      "name": "TelaNova",
-      "urls": [
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=OcuYNw--NPY"
-      ]
-    },
-    {
-      "name": "Movix",
-      "urls": [
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY"
-      ]
-    },
-    {
-      "name": "CineFlux",
-      "urls": [
-        "https://www.youtube.com/watch?v=EYlOzOw7q2E",
-        "https://www.youtube.com/watch?v=zCbnNR9FWHg",
-        "https://www.youtube.com/watch?v=sYM9RIp-IPA",
-        "https://www.youtube.com/watch?v=-jK_k4lGcgU",
-        "https://www.youtube.com/watch?v=2eccmLeiNm0"
-      ]
-    },
-    {
-      "name": "FilmSphere",
-      "urls": [
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY"
-      ]
-    },
-    {
-      "name": "NexoMovies",
-      "urls": [
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk"
-      ]
-    },
-    {
-      "name": "Cinex",
-      "urls": [
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk",
-        "https://www.youtube.com/watch?v=sYM9RIp-IPA",
-        "https://www.youtube.com/watch?v=EYlOzOw7q2E",
-        "https://www.youtube.com/watch?v=zCbnNR9FWHg",
-        "https://www.youtube.com/watch?v=-jK_k4lGcgU",
-        "https://www.youtube.com/watch?v=2eccmLeiNm0"
-      ]
-    },
-    {
-      "name": "NexReel",
-      "urls": [
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=N_mEMaNrxnY",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=S3SMDqnN6fY",
-        "https://www.youtube.com/watch?v=43w_gwZ758A",
-        "https://www.youtube.com/watch?v=GMmb63nsDIc",
-        "https://www.youtube.com/watch?v=OcuYNw--NPY",
-        "https://www.youtube.com/watch?v=d7gPYtwYtCk"
+        "https://www.youtube.com/watch?v=uPHuOJ_1gzw",
+        "https://www.youtube.com/watch?v=tcuRzQcTs9g",
+        "https://www.youtube.com/watch?v=vBynw9Isr28",
+        "https://www.youtube.com/watch?v=KFMYx1TibeQ",
+        "https://www.youtube.com/watch?v=BQ0mxQXmLsk"
       ]
     }
   ]
 }
-
