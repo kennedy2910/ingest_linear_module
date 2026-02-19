@@ -32,6 +32,8 @@ HEADERS = {
     "X-API-KEY": API_KEY or ""
 }
 
+_PLAYLIST_CACHE = {}
+
 YOUTUBE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
@@ -68,10 +70,106 @@ def extract_video_id(url: str) -> str:
 def normalize_watch_url(video_id: str) -> str:
     return f"https://www.youtube.com/watch?v={video_id}"
 
-def extract_duration(html: str):
+def _parse_iso8601_duration_to_seconds(value: str):
+    # YouTube may expose duration in ISO-8601 (e.g. PT1H02M03S).
+    m = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", (value or "").strip())
+    if not m:
+        return None
+    h = int(m.group(1) or 0)
+    mins = int(m.group(2) or 0)
+    secs = int(m.group(3) or 0)
+    total = (h * 3600) + (mins * 60) + secs
+    return total if total > 0 else None
+
+def _extract_json_object_after(html: str, anchor: str):
+    i = html.find(anchor)
+    if i < 0:
+        return None
+    i += len(anchor)
+    while i < len(html) and html[i].isspace():
+        i += 1
+    if i >= len(html) or html[i] != "{":
+        return None
+
+    depth = 0
+    in_str = False
+    esc = False
+    j = i
+    while j < len(html):
+        ch = html[j]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    j += 1
+                    break
+        j += 1
+
+    if depth != 0:
+        return None
+    try:
+        return json.loads(html[i:j])
+    except Exception:
+        return None
+
+def _safe_int(v):
+    try:
+        return int(str(v).strip())
+    except Exception:
+        return None
+
+def extract_duration(html: str, player_response: dict | None = None):
+    # Common pattern in watch HTML payload.
     m = re.search(r'"lengthSeconds":"(\d+)"', html)
     if m:
         return int(m.group(1))
+
+    # Fallback: numeric JSON form.
+    m = re.search(r'"lengthSeconds":\s*(\d+)', html)
+    if m:
+        return int(m.group(1))
+
+    # Fallback: millisecond duration field.
+    m = re.search(r'"approxDurationMs":"(\d+)"', html)
+    if m:
+        ms = int(m.group(1))
+        if ms > 0:
+            return ms // 1000
+
+    pr = player_response or {}
+    video_details = (pr.get("videoDetails") or {}) if isinstance(pr, dict) else {}
+    dur = _safe_int(video_details.get("lengthSeconds"))
+    if dur and dur > 0:
+        return dur
+
+    # Additional fallback seen in microformat.
+    iso_dur = (
+        (pr.get("microformat") or {})
+        .get("playerMicroformatRenderer", {})
+        .get("lengthSeconds")
+    ) if isinstance(pr, dict) else None
+    dur = _safe_int(iso_dur)
+    if dur and dur > 0:
+        return dur
+
+    # Last fallback from schema metadata.
+    m = re.search(r'"duration":"(PT[^"]+)"', html)
+    if m:
+        dur = _parse_iso8601_duration_to_seconds(m.group(1))
+        if dur:
+            return dur
+
     return None
 
 def fetch_youtube_meta(video_id):
@@ -82,13 +180,27 @@ def fetch_youtube_meta(video_id):
 
     html = urlopen(req, timeout=20).read().decode("utf-8", errors="ignore")
 
-    duration = extract_duration(html)
+    player_response = _extract_json_object_after(html, "ytInitialPlayerResponse = ")
+    duration = extract_duration(html, player_response=player_response)
 
     if not duration:
-        raise Exception("duration not found")
+        playability = (player_response or {}).get("playabilityStatus", {})
+        status = (playability.get("status") or "").strip()
+        reason = (playability.get("reason") or "").strip()
+        if status and status.upper() != "OK":
+            detail = f"{status}: {reason}" if reason else status
+            raise Exception(f"duration not found (video unavailable: {detail})")
+        raise Exception("duration not found (unsupported YouTube page format)")
 
-    title_match = re.search(r'<meta\s+name="title"\s+content="([^"]+)"', html)
-    title = title_match.group(1) if title_match else "Unknown"
+    title = (
+        ((player_response or {}).get("videoDetails") or {}).get("title")
+        or None
+    )
+    if not title:
+        title_match = re.search(r'<meta\s+name="title"\s+content="([^"]+)"', html)
+        if not title_match:
+            title_match = re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
+        title = title_match.group(1) if title_match else "Unknown"
 
     thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
 
@@ -103,6 +215,56 @@ def fetch_edge_channels():
     r = requests.get(url, headers=HEADERS, timeout=20)
     r.raise_for_status()
     return r.json()
+
+def fetch_default_playlist_id(channel_id):
+    key = _norm_id(channel_id)
+    if not key:
+        return None
+    if key in _PLAYLIST_CACHE:
+        return _PLAYLIST_CACHE[key]
+
+    url = f"{CENTRAL_URL}/admin/channels/{key}"
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        if not r.ok:
+            _PLAYLIST_CACHE[key] = None
+            return None
+        html = r.text or ""
+        m_select = re.search(
+            r'<select[^>]*name=["\']playlist_id["\'][^>]*>(.*?)</select>',
+            html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if not m_select:
+            _PLAYLIST_CACHE[key] = None
+            return None
+
+        select_html = m_select.group(1)
+        m_selected = re.search(
+            r'<option[^>]*value=["\']?(\d+)["\']?[^>]*selected',
+            select_html,
+            flags=re.IGNORECASE,
+        )
+        if m_selected:
+            value = _norm_id(m_selected.group(1))
+            _PLAYLIST_CACHE[key] = value
+            return value
+
+        m_first = re.search(
+            r'<option[^>]*value=["\']?(\d+)["\']?',
+            select_html,
+            flags=re.IGNORECASE,
+        )
+        if m_first:
+            value = _norm_id(m_first.group(1))
+            _PLAYLIST_CACHE[key] = value
+            return value
+
+    except Exception:
+        pass
+
+    _PLAYLIST_CACHE[key] = None
+    return None
 
 def flatten_edge_channels(edge_payload: dict):
     out = []
@@ -199,6 +361,38 @@ def channel_has_video(video_id, items):
                 return True
     return False
 
+def _read_item_duration(v):
+    try:
+        return int(str(v).strip())
+    except Exception:
+        return None
+
+def get_stored_duration_for_inserted_video(channel_id, position, video_id):
+    items = get_channel_items(channel_id)
+    if not items:
+        return None
+
+    target_pos = _read_item_duration(position)
+    # Prefer exact (position + video id) match.
+    for item in items:
+        item_pos = _read_item_duration(item.get("position"))
+        if target_pos is not None and item_pos != target_pos:
+            continue
+        try:
+            if extract_video_id(item.get("url") or "") == video_id:
+                return _read_item_duration(item.get("duration"))
+        except Exception:
+            continue
+
+    # Fallback: latest match by video id only.
+    for item in reversed(items):
+        try:
+            if extract_video_id(item.get("url") or "") == video_id:
+                return _read_item_duration(item.get("duration"))
+        except Exception:
+            continue
+    return None
+
 def retry(fn, attempts=3):
     for i in range(attempts):
         try:
@@ -208,7 +402,7 @@ def retry(fn, attempts=3):
                 raise
             time.sleep(2)
 
-def insert(channel_id, url, *, items_cache=None, next_position=None, dry_run=False):
+def insert(channel_id, url, *, items_cache=None, next_position=None, dry_run=False, playlist_id=None):
 
     if "youtube" not in url and "youtu.be" not in url:
         raise Exception("Only youtube supported in PRO ingest for now")
@@ -226,11 +420,15 @@ def insert(channel_id, url, *, items_cache=None, next_position=None, dry_run=Fal
 
     payload = {
         "channel_id": str(channel_id),
+        "return_channel_id": str(channel_id),
         "position": str(position),
         "type": "video",
+        "item_type": "video",
         "url": normalize_watch_url(video_id),
         "duration": str(meta["duration"]),
     }
+    if playlist_id is not None:
+        payload["playlist_id"] = str(playlist_id)
 
 
     endpoint = f"{CENTRAL_URL}/admin/channel-items/create"
@@ -249,6 +447,18 @@ def insert(channel_id, url, *, items_cache=None, next_position=None, dry_run=Fal
     response_text = (r.text or "").encode("ascii", "ignore").decode()
     print("Response:", r.status_code, response_text[:500])
     r.raise_for_status()
+
+    stored_duration = get_stored_duration_for_inserted_video(channel_id, position, video_id)
+    expected_duration = _read_item_duration(meta.get("duration"))
+    if (
+        stored_duration is not None
+        and expected_duration is not None
+        and stored_duration != expected_duration
+    ):
+        print(
+            "WARN: Central stored duration differs from YouTube metadata. "
+            f"video_id={video_id} expected={expected_duration} stored={stored_duration}"
+        )
     return True
 
 def _strip_trailing_commas_json(s: str) -> str:
@@ -329,6 +539,14 @@ def ingest_from_json(path: str, *, delay_seconds: float = 3.0, dry_run: bool = F
             f"\n== Channel: '{name}' (use_channel_id={channel_id}, internal_id={internal_id}, number={channel_number}, provider={ch.get('_provider_name')}) =="
         )
 
+        playlist_id = fetch_default_playlist_id(channel_id)
+        if playlist_id is not None:
+            print(f"Detected playlist_id={playlist_id} for channel_id={channel_id}")
+        else:
+            print(
+                f"WARN: playlist_id not detected for channel_id={channel_id}; server may fallback duration to default"
+            )
+
         # Fetch items once per channel (avoid hammering /api/edge/channels).
         items = ch.get("items")
         if not isinstance(items, list):
@@ -336,9 +554,17 @@ def ingest_from_json(path: str, *, delay_seconds: float = 3.0, dry_run: bool = F
         pos = get_next_position(channel_id, items=items)
 
         for u_idx, url in enumerate(urls, start=1):
+            did_insert = False
             try:
                 print(f"\n[{u_idx}/{len(urls)}] {url}")
-                did_insert = insert(channel_id, url, items_cache=items, next_position=pos, dry_run=dry_run)
+                did_insert = insert(
+                    channel_id,
+                    url,
+                    items_cache=items,
+                    next_position=pos,
+                    dry_run=dry_run,
+                    playlist_id=playlist_id,
+                )
                 if did_insert:
                     # Keep local state consistent (best-effort; Central is source of truth).
                     try:
@@ -384,4 +610,17 @@ if __name__ == "__main__":
         print("  python ingest_linear.py --json lista.json [--delay-seconds 3] [--dry-run] [--continue-on-error]")
         sys.exit(1)
 
-    insert(args.channel_id, args.youtube_url, dry_run=args.dry_run)
+    single_playlist_id = fetch_default_playlist_id(args.channel_id)
+    if single_playlist_id is not None:
+        print(f"Detected playlist_id={single_playlist_id} for channel_id={args.channel_id}")
+    else:
+        print(
+            f"WARN: playlist_id not detected for channel_id={args.channel_id}; server may fallback duration to default"
+        )
+
+    insert(
+        args.channel_id,
+        args.youtube_url,
+        dry_run=args.dry_run,
+        playlist_id=single_playlist_id,
+    )
